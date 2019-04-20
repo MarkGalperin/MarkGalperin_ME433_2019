@@ -55,16 +55,23 @@ int main() {
 
     //Tris and LAT stuff
     TRISAbits.TRISA4 = 0;   //LED Pin A4 set to output
-    LATAbits.LATA4 = 0;     //LED Set to HIGH
     TRISBbits.TRISB4 = 1;   //USER button pin B4 set to input
-   
+    LATAbits.LATA4 = 0;     //LED Set to LOW  
     __builtin_enable_interrupts();
 
-    while(!PORTBbits.RB4) {
+    while(1) {
 	// use _CP0_SET_COUNT(0) and _CP0_GET_COUNT() to test the PIC timing
-	// remember the core timer runs at half the sysclk
-    
+	// remember the core timer runs at half the sysclk 
+        while(PORTBbits.RB4 == 0) {
+            LATAbits.LATA4 = 1 ;                 //LED Set to HIGH
         
+            _CP0_SET_COUNT(0);                       //set core timer to 0
+            while(_CP0_GET_COUNT() <= 12000) { ; }   // delay by 0.5 ms
         
+            LATAbits.LATA4 = 0;                     //LED Set to HIGH
+        
+            _CP0_SET_COUNT(0);                       //set core timer to 0
+            while(_CP0_GET_COUNT() <= 12000) { ; }   // delay by 0.5 ms again
+        }
     }
 }
