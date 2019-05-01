@@ -99,7 +99,38 @@ int main() {
     
     while(1) {
         
-        //Channel A...
+        //Sending Channel A...
+        sendVoltage(0,voltageA[count]);
+        
+        //Sending Channel B...
+        sendVoltage(1,voltageB[count]);
+        
+        //counter and reset
+        count++ ;
+        if (count == 100){
+            count = 0;
+        }        
+    }
+}
+
+void sendVoltage(char channel, unsigned char voltage) {
+    unsigned short c = 0b0111000000000000;
+    c = c | channel<<15 ;
+    c = c | (voltage << 4);
+    
+    //sending...
+    CS = 0;
+    spi1_io(c) ;
+    CS = 1;
+    
+    //delay...
+    _CP0_SET_COUNT(0);                       //set core timer to 0
+    while(_CP0_GET_COUNT() <= 10000) { ; }   //
+    
+}
+
+/*
+    //Channel A...
         c1 = 0b0111000000000000;
         c1 = c1 | (voltageA[count] << 4);
         
@@ -122,11 +153,5 @@ int main() {
         //delay
         _CP0_SET_COUNT(0);                       //set core timer to 0
         while(_CP0_GET_COUNT() <= 100000) { ; }   // delay by 0.125 ms
-        
-        //counter and reset
-        count++ ;
-        if (count == 100){
-            count = 0;
-        }        
-    }
-}
+ * 
+ * */
