@@ -1,6 +1,7 @@
 #include<xc.h>           // processor SFR definitions
 #include<sys/attribs.h>  // __ISR macro
 #include "spi.h"
+#include <math.h>
 
 // DEVCFG0 
 #pragma config DEBUG = OFF // no debugging 
@@ -37,6 +38,7 @@
 #pragma config FUSBIDIO = ON // USB pins controlled by USB module 
 #pragma config FVBUSONIO = ON // USB BUSON controlled by USB module
 
+#define CS LATBbits.LATB7 //B7 is the chip select pin
 
 int main() {
 
@@ -56,23 +58,75 @@ int main() {
 
     //Initialize pins...
     //I'm setting B13 and B7 as SDO1 and SS1, respectively. B8 is SDI1 B14 is SCK1
-    TRISBbits.TRISB13 = 0 ; //B13 set to output
+    //TRISBbits.TRISB13 = 0 ; //B13 set to output
     TRISBbits.TRISB7 = 0 ;  //B7 set to output 
-    TRISBbits.TRISB8 = 0 ;  //B8 set to input
+    //TRISBbits.TRISB8 = 0 ;  //B8 set to input
+    
     
     RPB13Rbits.RPB13R = 0b0011 ;    //B13 mapped to SDO1
-    RPB7Rbits.RPB7R = 0b0011 ;      //B7 mapped to SS1 (CHANGE TO JUST LAT??)
-    SDI1Rbits.SDI1R = 0b0100 ;      //SDI1 mapped to RB8
+    // RPB7Rbits.RPB7R = 0b0011 ;   //B7 mapped to SS1 (CHANGE TO JUST LAT??)
+    //SDI1Rbits.SDI1R = 0b0100 ;      //SDI1 mapped to RB8
+    
+    CS =1 ;
     
     //Initialize SPI
     spi1_init();
     
+    //data variables
+    unsigned short c1,c2 ;
+    //unsigned char BUFGASHD = 0b111 ;
+    //unsigned char chAB ;
+    //unsigned char voltageA = 200;
+    //unsigned char voltageB = 64;
+    
+    //Waveforms A and B...
+    unsigned char voltageA[100], voltageB[100];
+    char i = 0 ;
+    for (i = 0; i<100; ++i) {
+        voltageA[i] = (unsigned char) 127 + 127*sin(i/15.915) ;
+        if (i<=50) {
+            voltageB[i] = (unsigned char) i*(255/50.0) ;
+        }
+        if (i>50) {
+            voltageB[i] = (unsigned char) 255 - i*(255/50.0) ;
+        }
+        }
+    
+    //counter
+    char count = 0;
     
     __builtin_enable_interrupts();
-
+    
     while(1) {
-	
         
+        //Channel A...
+        c1 = 0b0111000000000000;
+        c1 = c1 | (voltageA[count] << 4);
         
+        //Channel B...
+        c2 = 0b1111000000000000;
+        c2 = c2 | (voltageB[count] << 4);
+        
+        //sending
+        CS = 0;
+        spi1_io(c1) ;
+        CS = 1;
+        
+        _CP0_SET_COUNT(0);                       //set core timer to 0
+        while(_CP0_GET_COUNT() <= 4000) { ; }   //
+        
+        CS = 0;
+        spi1_io(c2) ;
+        CS = 1;
+        
+        //delay
+        _CP0_SET_COUNT(0);                       //set core timer to 0
+        while(_CP0_GET_COUNT() <= 100000) { ; }   // delay by 0.125 ms
+        
+        //counter and reset
+        count++ ;
+        if (count == 100){
+            count = 0;
+        }        
     }
 }

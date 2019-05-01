@@ -8,6 +8,6 @@
 //fxn declarations go here
 
 void spi1_init();
-char spi1_io(char write);
+unsigned short spi1_io(unsigned short write);
 
 #endif
