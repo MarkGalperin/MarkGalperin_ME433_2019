@@ -1,6 +1,8 @@
 #include<xc.h>           // processor SFR definitions
 #include<sys/attribs.h>  // __ISR macro
+#include<string.h>
 #include "ili9341.h"
+#define STRINGLEN 100
 
 // DEVCFG0 
 #pragma config DEBUG = OFF // no debugging 
@@ -37,6 +39,10 @@
 #pragma config FUSBIDIO = ON // USB pins controlled by USB module 
 #pragma config FVBUSONIO = ON // USB BUSON controlled by USB module
 
+//Fxn prototypes...
+void LCD_printletter(char letter, unsigned short x1,unsigned short y1,unsigned short color,unsigned short color_bgd);
+void LCD_print(char * message, unsigned short x1,unsigned short y1,unsigned short color,unsigned short color_bgd);
+void LCD_bar(unsigned short x1, unsigned short y1 ,unsigned short xlen,unsigned short ylen,unsigned short barlen,unsigned short color,unsigned short color_bgd);
 
 int main() {
 
@@ -59,15 +65,125 @@ int main() {
     LCD_init();
     LCD_clearScreen(ILI9341_RED);
     
-    unsigned short x = 50;
-    unsigned short y = 30;
-    unsigned short color = ILI9341_OLIVE ;
+    unsigned short x1 = 50;
+    unsigned short y1 = 80;
+    unsigned short color = ILI9341_WHITE ;
+    unsigned short color_bgd = ILI9341_BLACK ;
+    int count = 0;
+    int countmax = 100;
     
     __builtin_enable_interrupts();
 
+    
     while(1) {
-	
-        LCD_drawPixel(x, y, color);
         
+        //the message...
+        char message[STRINGLEN];
+        sprintf(message,"mark is the best %d",count);
+        
+        //printing and delay...
+        LCD_print(message,x1,y1,color,color_bgd);
+        _CP0_SET_COUNT(0);                       //set core timer to 0
+        while(_CP0_GET_COUNT() <= 3000000) { ; }   // delay by .125 s
+        
+        //bar
+        LCD_bar(x1,y1+25,countmax,10,count,ILI9341_MAROON,ILI9341_WHITE);
+        
+        count++;
+        if (count == 99){
+            count = 0;
+        }
     }
+    
+}
+
+void LCD_print(char * message, unsigned short x1,unsigned short y1,unsigned short color,unsigned short color_bgd){
+    
+    char length = (char) strlen(message);
+    char i;
+    for(i=0 ; i<length ; ++i){
+        LCD_printletter(message[i],x1+5*i,y1,color,color_bgd);
+    }
+    
+}
+
+void LCD_bar(unsigned short x1, unsigned short y1 ,unsigned short xlen,unsigned short ylen,unsigned short barlen,unsigned short color,unsigned short color_bgd){
+    unsigned short i;
+    unsigned short j;
+    
+    for(i = 0; i<xlen; ++i){
+        for(j = 0; j<ylen ; ++j){
+            if(i < barlen){
+                LCD_drawPixel(x1+i, y1+j, color);
+            }
+            else {
+                LCD_drawPixel(x1+i, y1+j, color_bgd);
+            }
+        }
+    }
+        
+        
+}
+
+void LCD_printletter(char letter, unsigned short x1,unsigned short y1,unsigned short color,unsigned short color_bgd) {
+    unsigned short i;
+    unsigned short j;
+    char row;
+    letter = letter - 0x20;
+    
+    
+    for(i = 0; i<5; ++i){
+            //Getting the character row...
+            row = ASCII[letter][i];
+            
+            //Checking each bit...
+            if((row & 1) == 1){
+                LCD_drawPixel(x1+i, y1, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1, color_bgd);
+            }
+            if((row & 2) == 2){
+                LCD_drawPixel(x1+i, y1+1, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+1, color_bgd);
+            }
+            if((row & 4) == 4){
+                LCD_drawPixel(x1+i, y1+2, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+2, color_bgd);
+            }
+            if((row & 8) == 8){
+                LCD_drawPixel(x1+i, y1+3, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+3, color_bgd);
+            }
+            if((row & 16) == 16){
+                LCD_drawPixel(x1+i, y1+4, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+4, color_bgd);
+            }
+            if((row & 32) == 32){
+                LCD_drawPixel(x1+i, y1+5, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+5, color_bgd);
+            }
+            if((row & 64) == 64){
+                LCD_drawPixel(x1+i, y1+6, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+6, color_bgd);
+            }
+            if((row & 128) == 128){
+                LCD_drawPixel(x1+i, y1+7, color);
+            }
+            else{
+                LCD_drawPixel(x1+i, y1+7, color_bgd);
+            }
+        }
 }
