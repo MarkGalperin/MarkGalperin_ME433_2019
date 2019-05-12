@@ -77,22 +77,31 @@ int main() {
     
     while(1) {
         
+        _CP0_SET_COUNT(0);                       //set core timer to 0
+        
         //the message...
         char message[STRINGLEN];
         sprintf(message,"mark is the best %d",count);
         
         //printing and delay...
         LCD_print(message,x1,y1,color,color_bgd);
-        _CP0_SET_COUNT(0);                       //set core timer to 0
         while(_CP0_GET_COUNT() <= 3000000) { ; }   // delay by .125 s
         
         //bar
-        LCD_bar(x1,y1+25,countmax,10,count,ILI9341_MAROON,ILI9341_WHITE);
+        LCD_bar(x1,y1+25,countmax,10,count,ILI9341_PURPLE,ILI9341_WHITE);
         
         count++;
         if (count == 99){
             count = 0;
         }
+        
+        //live frame rate...
+        float rate = 24000000.0/_CP0_GET_COUNT();
+        char ratemsg[STRINGLEN];
+        sprintf(ratemsg,"FPS = %f",rate);
+        LCD_print(ratemsg,0,0,color,color_bgd);
+        
+        
     }
     
 }
